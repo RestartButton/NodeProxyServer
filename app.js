@@ -1,29 +1,22 @@
 const express = require('express');
 const morgan = require('morgan');
-const { createProxyMiddleware } = require('http-proxy-middleware');
-require('dotenv').config()
+const path = require('path');
+var bodyParser = require('body-parser');
+var serveStatic  = require('serve-static');
 
 const app = express();
 
-const PORT = 3000;
-const HOST = "localhost";
-const { API_BASE_URL } = process.env;
-const { API_KEY_VALUE }  =  process.env;
-const API_SERVICE_URL = `${API_BASE_URL}?q=London&key=${API_KEY_VALUE}`;
+app.set('view engine', 'html');
+app.engine('html', require('hbs').__express);
 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
-app.use(
-    "/weather",
-    createProxyMiddleware({
-        target: API_SERVICE_URL,
-        changeOrigin: true,
-        pathRewrite: {
-            "^/weather": "",
-        },
-    })
-);
+const publicDirectory = path.join(__dirname, './assets');
+app.use(serveStatic(publicDirectory));
 
-app.listen(PORT, HOST, () => {
-    console.log(`Starting Proxy at ${HOST}:${PORT}`);
-})
+var indexRouter = require('./routes/index-route');
+var weatherRouter  = require('./routes/weather-route');
+app.use('/', indexRouter);
+app.use('/', weatherRouter);
